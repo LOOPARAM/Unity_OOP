@@ -37,14 +37,53 @@ namespace DependencyInjection
         {
             base.Awake();
             
-            //Find all modules implementing IDependencyProvider
+            // Find all modules implementing IDependencyProvider
             var providers = FindMonoBehaviours().OfType<IDependencyProvider>();
             foreach (var provider in providers)
             {
                 RegisterProvider(provider);
             }
+            
+            // Find all injectable objects and inject their dependencies
+            var injectables = FindMonoBehaviours().Where(IsInjectable);
+            foreach (var injectable in injectables)
+            {
+                Inject(injectable);
+            }
         }
 
+        private void Inject(object instance)
+        {
+            var type = instance.GetType();
+            var injectableFields = type.GetFields(k_bindingFlags)
+                .Where(member => Attribute.IsDefined(member, typeof(InjectAttribute)));
+
+            foreach (var injectableField in injectableFields)
+            {
+                var fieldType = injectableField.FieldType;
+                var resolvedInstance = Resolve(fieldType);
+                if (resolvedInstance == null)
+                {
+                    throw new Exception($"Failed to inject {fieldType.Name} into {type.Name}");
+                }
+                
+                injectableField.SetValue(instance, resolvedInstance);
+                Debug.Log($"Injected {fieldType.Name} into {type.Name}");
+            }
+        }
+
+        object Resolve(Type type)
+        {
+            registry.TryGetValue(type, out var resolvedInstance);
+            return resolvedInstance;
+        }
+
+        static bool IsInjectable(MonoBehaviour obj)
+        {
+            var members = obj.GetType().GetMembers(k_bindingFlags);
+            return members.Any(member => Attribute.IsDefined(member, typeof(InjectAttribute)));
+        }
+        
         void RegisterProvider(IDependencyProvider provider)
         {
             var methods = provider.GetType().GetMethods(k_bindingFlags);
@@ -58,6 +97,7 @@ namespace DependencyInjection
                 if (provideInstance != null)
                 {
                     registry.Add(returnType, provideInstance);
+                    Debug.Log($"Provider {returnType.Name} from {provider.GetType().Name}");
                 }
                 else
                 {
