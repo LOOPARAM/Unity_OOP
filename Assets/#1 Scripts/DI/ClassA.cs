@@ -1,3 +1,4 @@
+using System;
 using UnityEngine;
 
 namespace DependencyInjection
@@ -10,6 +11,11 @@ namespace DependencyInjection
         public void Init(ServiceA serviceA)
         {
             this.serviceA = serviceA;
+        }
+
+        private void Start()
+        {
+            serviceA.Initialize("ServiceA initialized from ClassA");
         }
     }
 }

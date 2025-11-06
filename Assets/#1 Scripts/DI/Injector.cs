@@ -70,6 +70,24 @@ namespace DependencyInjection
                 injectableField.SetValue(instance, resolvedInstance);
                 Debug.Log($"Injected {fieldType.Name} into {type.Name}");
             }
+            
+            var injectableMethods = type.GetMethods(k_bindingFlags)
+                .Where(member => Attribute.IsDefined(member, typeof(InjectAttribute)));
+
+            foreach (var injectableMethod in injectableMethods)
+            {
+                var requiredPrameters = injectableMethod.GetParameters()
+                    .Select(parameter => parameter.ParameterType)
+                    .ToArray();
+                var resolvedInstances = requiredPrameters.Select(Resolve).ToArray();
+                if (resolvedInstances.Any(resolvedInstance => resolvedInstance == null))
+                {
+                    throw new Exception($"Failed to inject {type.Name}.{injectableMethod.Name}");
+                }
+                
+                injectableMethod.Invoke(instance, resolvedInstances);
+                Debug.Log($"Method injected {type.Name}.{injectableMethod.Name}");
+            }
         }
 
         object Resolve(Type type)
