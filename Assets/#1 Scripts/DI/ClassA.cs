@@ -13,9 +13,12 @@ namespace DependencyInjection
             this.serviceA = serviceA;
         }
 
+        [Inject] EnvironmentSystem environmentSystem;
+
         private void Start()
         {
             serviceA.Initialize("ServiceA initialized from ClassA");
+            environmentSystem.Initialize();
         }
     }
 }
