@@ -2,10 +2,16 @@ using UnityEngine;
 
 namespace DependencyInjection
 {
-    public class EnvironmentSystem : MonoBehaviour, IDependencyProvider
+    public interface IEnvironmentSystem
+    {
+        EnvironmentSystem ProvideEnvironmentSystem();
+        void Initialize();
+    }
+
+    public class EnvironmentSystem : MonoBehaviour, IDependencyProvider, IEnvironmentSystem
     {
         [Provide]
-        EnvironmentSystem ProvideEnvironmentSystem()
+        public EnvironmentSystem ProvideEnvironmentSystem()
         {
             return this;
         }
